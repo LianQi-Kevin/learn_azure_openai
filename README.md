@@ -71,5 +71,7 @@ print(response['choices'][0]['message']['content'])
 
 ### 相关资料
 
+* https://learn.microsoft.com/zh-cn/azure/cognitive-services/openai/how-to/chatgpt?pivots=programming-language-chat-completions
+* https://learn.microsoft.com/zh-cn/azure/cognitive-services/openai/concepts/models
 * https://aka.ms/cn/LearnOpenAI
 * https://learn.microsoft.com/zh-cn/azure/cognitive-services/openai/
