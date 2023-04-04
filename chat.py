@@ -1,6 +1,8 @@
 import codecs
 import json
+import os
 from typing import Tuple
+from uuid import uuid4
 
 import openai
 import tiktoken
@@ -9,7 +11,7 @@ import tiktoken
 class ChatOpenai:
     def __init__(self, config_path: str = "key.json"):
         # load config
-        self.config = self._load_conf(config_path)
+        self.config = self._load_json(config_path)
         self.max_response_tokens = self.config.get("max_response_tokens", 250)
         self.token_limit = self.config.get("token_limit", 4096)
         self.temperature = self.config.get("temperature", 0.7)
@@ -25,10 +27,13 @@ class ChatOpenai:
         self.token_encoding = tiktoken.encoding_for_model(self.model_name)
         self.tokens_per_message, self.token_per_name = self._init_permsg_pername()
 
+        # conversation saves
+        self.conversation_save_path = "./conversation"
+
     @staticmethod
-    def _load_conf(config_path: str) -> dict:
-        with codecs.open(config_path, "r", "UTF-8") as conf_f:
-            return json.loads("".join(conf_f.readlines()))
+    def _load_json(json_path: str) -> dict:
+        with codecs.open(json_path, "r", "UTF-8") as json_f:
+            return json.loads("".join(json_f.readlines()))
 
     def _init_conversation(self):
         """
@@ -98,10 +103,45 @@ class ChatOpenai:
         self.conversation.append({"role": "assistant", "content": response_msg})
         return response_msg, response
 
+    def save_conversation(self, export_path: str = None):
+        """
+        将对话内容写入文件
+        """
+        # data
+        data = {
+            "conversation": self.conversation,
+            "system_msg_num": self.system_msg_num,
+            "api_type": self.config["api_type"],
+            "api_version": self.config["api_version"],
+            "model_name": self.model_name,
+            "max_response_tokens": self.max_response_tokens,
+            "token_limit": self.token_limit,
+            "temperature": self.temperature,
+        }
+
+        # write
+        os.makedirs(self.conversation_save_path, exist_ok=True)
+        if export_path is None:
+            export_path = os.path.join(self.conversation_save_path, f"{uuid4()}.json")
+        with codecs.open(export_path, "w", encoding="UTF-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=4)
+
+    def load_conversation(self, saved_path: str):
+        """
+        加载已保存的conversation文件
+        """
+        data_dict = self._load_json(saved_path)
+        assert "conversation" in data_dict.keys(), f"not found conversation in {saved_path}"
+        self.conversation = data_dict["conversation"]
+
 
 if __name__ == '__main__':
     chat = ChatOpenai(config_path="dev_Ai_key.json")
     while True:
         user_input = input('User: ')
+        if user_input == "exit":
+            break
         response, _ = chat.get_response(user_input)
         print(f"Assistant: {response}")
+
+    chat.save_conversation()
