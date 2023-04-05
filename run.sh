@@ -1,0 +1,1 @@
+/home/ecs-user/miniconda3/envs/openai/bin/python ./gradio_app.py
