@@ -1,4 +1,6 @@
 .idea
+venv
 dev_Ai_key.json
 *test*
 conversation
+*.log

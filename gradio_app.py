@@ -1,3 +1,4 @@
+import logging
 from copy import deepcopy
 from typing import Tuple
 
@@ -5,6 +6,7 @@ import gradio as gr
 import openai
 
 from chat import ChatOpenai
+from logging_utils import log_set
 
 
 class GrChat(ChatOpenai):
@@ -14,6 +16,7 @@ class GrChat(ChatOpenai):
 
     def gr_get_response(self, messages: list, temperature: float) -> Tuple[str, dict, list]:
         self._gr_token_del_conversation(messages)
+        logging.info(f"Request message: {messages[-1]}")
         response = openai.ChatCompletion.create(
             engine=self.config["deployment_name"],
             messages=messages,
@@ -22,6 +25,7 @@ class GrChat(ChatOpenai):
         )
         response_msg = response['choices'][0]['message']['content']
         messages.append({"role": "assistant", "content": response_msg})
+        logging.info(f"Response message: {messages[-1]}")
         return response_msg, response, messages
 
     def _gr_token_del_conversation(self, messages: list):
@@ -77,7 +81,13 @@ def main():
 
 
 if __name__ == '__main__':
+    # init logging
+    log_set(log_level=logging.INFO, log_save=True, save_path="gradio_chat.log")
+
+    # init openai
     chat = GrChat("dev_Ai_key.json")
+    logging.info("Successful init GrChat class")
+    logging.info(f"Class config: {chat.config}")
 
     app = main()
     app.launch(share=False, server_port=6006, server_name="0.0.0.0")
