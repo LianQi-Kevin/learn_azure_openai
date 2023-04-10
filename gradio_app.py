@@ -1,3 +1,5 @@
+import codecs
+import json
 import logging
 from copy import deepcopy
 from typing import Tuple
@@ -51,7 +53,6 @@ def bot(chat_history: list, conversation_history: list, temperature: float) -> T
     conversation_history.append({"role": "user", "content": text})
     response_msg, _, messages = chat.gr_get_response(conversation_history, temperature)
     chat_history[-1][1] = response_msg
-    print(response_msg)
     return chat_history, conversation_history
 
 
@@ -89,5 +90,10 @@ if __name__ == '__main__':
     logging.info("Successful init GrChat class")
     logging.info(f"Class config: {chat.config}")
 
+    # account
+    with codecs.open("dev_account.json", "r") as account_f:
+        account = [(a["username"], a["password"]) for a in json.loads("".join(account_f.readlines()))]
+
+    # run app
     app = main()
-    app.launch(share=False, server_port=6006, server_name="0.0.0.0")
+    app.launch(share=False, server_port=6006, server_name="0.0.0.0", auth=account)

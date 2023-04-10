@@ -1,6 +1,7 @@
 .idea
 venv
-dev_Ai_key.json
+dev*
 *test*
 conversation
 *.log
+vue*
