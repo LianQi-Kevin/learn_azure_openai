@@ -1,4 +1,4 @@
 .idea
-dev_Ai_key.json
+dev*.json
 *test*
 conversation
