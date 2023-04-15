@@ -1,4 +1,5 @@
 openai
 tiktoken>=0.3.0
 flask
-flask-restful
+Flask-JWT-Extended
+sqlite

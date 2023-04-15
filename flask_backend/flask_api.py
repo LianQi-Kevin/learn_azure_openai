@@ -1,38 +1,65 @@
-from flask import Flask, request
-from flask_restful import Resource, Api
-# from chat import ChatOpenai
+from flask import Flask, request, jsonify
+# from flask_restful import Resource, Api
+from flask_jwt_extended import JWTManager
+from flask_jwt_extended import create_refresh_token, create_access_token
+from flask_jwt_extended import get_jwt_identity, get_jwt
+from flask_jwt_extended import jwt_required
+from datetime import timedelta
+from uuid import uuid4
 
-app = Flask(__name__)
-api = Api(app)
-datas = []
+# init flask & JWT
+app = Flask("ChatAPI")
+app.config["JWT_SECRET_KEY"] = uuid4()
+app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(minutes=15)
+app.config["JWT_REFRESH_TOKEN_EXPIRES"] = timedelta(days=30)
+
+jwt = JWTManager(app)
+
+Test_User = [
+    {
+        "id": "0",
+        "username": "admin",
+        "password": "admin_password",
+        "role": "admin",
+        "start_time": "2023-04-15_12:00:00",
+        "end_time": "2023-06-16_12:00:00"
+    },
+    {
+        "id": "1",
+        "username": "teacher1",
+        "password": "teacher1",
+        "role": "teacher",
+        "start_time": "2023-04-15_12:00:00",
+        "end_time": "2023-06-16_12:00:00"
+    }
+]
 
 
-class UserView(Resource):
-    """
-    通过继承 Resource 来实现调用 GET/POST 等动作方法
-    """
+@app.route("/login", methods=["POST"])
+def user_login():
+    username = request.json.get("username", None)
+    password = request.json.get("password", None)
 
-    def get(self):
-        """
-        GET 请求
-        :return:
-        """
-        return {'code': 200, 'msg': 'success', 'data': datas}
+    # 仅测试，后期更换到数据库操作
+    UserInfo = None
+    for dictionary in Test_User:
+        if dictionary.get("username") == username and dictionary.get("password") == password:
+            UserInfo = dictionary
+            break
+    if UserInfo is None:
+        return jsonify(msg="Account not found"), 401
 
-    def post(self):
-        # 参数数据
-        json_data = request.get_json()
-        print(json_data)
+    additional_claims = {
+        "role": UserInfo.get("role"),
+        "start_time": UserInfo.get("start_time"),
+        "end_time": UserInfo.get("end_time")
+    }
+    access_token = create_access_token(identity=UserInfo['id'])
+    # access_token = create_access_token(identity=UserInfo['id'], additional_claims=additional_claims)
+    refresh_token = create_refresh_token(identity=UserInfo['id'])
+    # refresh_token = create_refresh_token(identity=UserInfo['id'], additional_claims=additional_claims)
+    return jsonify(access_token=access_token, refresh_token=refresh_token), 200
 
-        # 追加数据到列表中
-        new_id = len(datas) + 1
-        datas.append({'id': new_id, **json_data})
-
-        # 返回新增的最后一条数据
-        return {'code': 200, 'msg': 'ok', 'success': datas}
-
-
-api.add_resource(UserView, '/User')
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
