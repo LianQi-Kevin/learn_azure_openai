@@ -3,3 +3,5 @@ dev*.json
 *test*
 conversation
 node_modules
+/venv/
+*.db

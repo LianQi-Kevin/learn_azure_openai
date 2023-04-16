@@ -8,7 +8,7 @@ from datetime import timedelta
 from uuid import uuid4
 
 # init flask & JWT
-app = Flask("ChatAPI")
+app = Flask(__name__)
 app.config["JWT_SECRET_KEY"] = uuid4()
 app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(minutes=15)
 app.config["JWT_REFRESH_TOKEN_EXPIRES"] = timedelta(days=30)
@@ -54,10 +54,8 @@ def user_login():
         "start_time": UserInfo.get("start_time"),
         "end_time": UserInfo.get("end_time")
     }
-    access_token = create_access_token(identity=UserInfo['id'])
-    # access_token = create_access_token(identity=UserInfo['id'], additional_claims=additional_claims)
-    refresh_token = create_refresh_token(identity=UserInfo['id'])
-    # refresh_token = create_refresh_token(identity=UserInfo['id'], additional_claims=additional_claims)
+    access_token = create_access_token(identity=UserInfo['id'], additional_claims=additional_claims)
+    refresh_token = create_refresh_token(identity=UserInfo['id'], additional_claims=additional_claims)
     return jsonify(access_token=access_token, refresh_token=refresh_token), 200
 
 
