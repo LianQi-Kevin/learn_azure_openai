@@ -21,16 +21,16 @@ Test_User = [
         "username": "admin",
         "password": "admin_password",
         "role": "admin",
-        "start_time": "2023-04-15_12:00:00",
-        "end_time": "2023-06-16_12:00:00"
+        "start_time": "2023-04-15 12:00:00",
+        "end_time": "2023-06-16 12:00:00"
     },
     {
         "id": "1",
         "username": "teacher1",
         "password": "teacher1",
         "role": "teacher",
-        "start_time": "2023-04-15_12:00:00",
-        "end_time": "2023-06-16_12:00:00"
+        "start_time": "2023-04-15 12:00:00",
+        "end_time": "2023-06-16 12:00:00"
     }
 ]
 
