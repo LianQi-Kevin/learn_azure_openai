@@ -17,3 +17,10 @@ class AccountError(Exception):
     账户和密码不存在
     """
     pass
+
+
+class TimeSetError(Exception):
+    """
+    为账号设置的终止时间早于开始时间
+    """
+    pass

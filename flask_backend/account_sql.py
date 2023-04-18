@@ -1,18 +1,25 @@
-import re
-import sqlite3
+import hashlib
 import logging
 import random
+import re
+import sqlite3
 import string
-import hashlib
 from datetime import datetime
 from typing import List, Tuple
+
+from utils.exceptions import DuplicateValueError, PasswordError, AccountError, TimeSetError
 from utils.logging_utils import log_set
-from utils.exceptions import DuplicateValueError, PasswordError, AccountError
 
 
-def verify_time(start_time: str, end_time: str, check_now: bool = False) -> bool:
-    start_time = datetime.strftime(start_time, "%Y-%m-%d %H:%M:%S")
-
+def verify_time(start_time: str, end_time: str) -> Tuple[bool, bool]:
+    """
+    :param start_time: account allow start time
+    :param end_time: account allow end time
+    :return: end_time > start_time, end_time > now_time > start_time
+    """
+    start_time = datetime.strptime(start_time, "%Y-%m-%d %H:%M:%S")
+    end_time = datetime.strptime(end_time, "%Y-%m-%d %H:%M:%S")
+    return end_time > start_time, end_time > datetime.now() > start_time
 
 
 def verify_password(password: str) -> bool:
@@ -92,8 +99,9 @@ class AccountSQL:
         for account in account_list:
             if self.check_username_exits(account[0]):
                 raise DuplicateValueError(f"{account[0]} already in used.")
+            if not verify_time(account[3], account[4])[0]:
+                raise TimeSetError(f"{account[0]} time set error, {account[4]} early than {account[3]}")
         for account in account_list:
-
             logging.warning(
                 f"Successful created: username: '{account[0]}' password: '{account[1]}' role: '{account[2]}' start_time: '{account[3]}' end_time: '{account[4]}'")
             cursor.execute("""
@@ -104,7 +112,7 @@ class AccountSQL:
 
     def check_username_exits(self, username: str) -> bool:
         """
-        判断数据库内是否存在该用户
+        Check whether the username exists in the database
         """
         cursor = self.conn.cursor()
         if cursor.execute("SELECT COUNT(username) FROM account WHERE username = ?;", [username]).fetchone()[0] != 0:
@@ -157,8 +165,20 @@ class AccountSQL:
         self.conn.commit()
         return True
 
-
-    def
+    def update_allow_time(self, username: str, start_time: str, end_time: str):
+        """
+        根据用户名修改可用时间
+        """
+        if self.check_username_exits(username):
+            if verify_time(start_time, end_time)[0]:
+                cursor = self.conn.cursor()
+                cursor.execute("UPDATE account SET start_time = ? and end_time = ? WHERE username = ?;",
+                               (start_time, end_time, username))
+                self.conn.commit()
+            else:
+                raise TimeSetError(f"Error, {end_time} early than {start_time}")
+        else:
+            raise AccountError(f"{username} does not exits")
 
 
 if __name__ == '__main__':
@@ -168,4 +188,3 @@ if __name__ == '__main__':
     # sql.create_accounts([("test_teacher", "password", "teacher", "2023-04-17 00:00:00", "2023-05-17 00:00:00")])
     # print(sql.username_get_base_info("admin"))
     # print(sql.change_password("test_std", "new_password", "password"))
-
