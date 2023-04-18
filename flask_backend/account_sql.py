@@ -1,18 +1,33 @@
+import re
 import sqlite3
 import logging
 import random
 import string
 import hashlib
+from datetime import datetime
 from typing import List, Tuple
 from utils.logging_utils import log_set
 from utils.exceptions import DuplicateValueError, PasswordError, AccountError
 
 
-def generate_key(length: int, unused: str = "':;^`(){}[]"):
+def verify_time(start_time: str, end_time: str, check_now: bool = False) -> bool:
+    start_time = datetime.strftime(start_time, "%Y-%m-%d %H:%M:%S")
+
+
+
+def verify_password(password: str) -> bool:
+    pattern = "^(?=.*\\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*()_+])[a-zA-Z\\d!@#$%^&*()_+]{8,}$"
+    if re.match(pattern, password):
+        return True
+    else:
+        return False
+
+
+def generate_key(length: int):
     """
     length长度的随机密钥, 包含大小写字母、数字、符号
     """
-    symbols = "".join([i for i in string.punctuation if i not in unused])
+    symbols = "!@#$%^&*()_+"
     sr = random.SystemRandom()
     rest = "".join(sr.choice(string.ascii_letters + string.digits + symbols) for _ in range(length - 4))
     mix = f"{sr.choice(string.ascii_lowercase)}{sr.choice(string.ascii_uppercase)}{sr.choice(string.digits)}{sr.choice(symbols)}{rest}"
@@ -75,17 +90,19 @@ class AccountSQL:
         cursor = self.conn.cursor()
         # 遍历列表判断username重复项
         for account in account_list:
-            if self.check_account_exits(username=account[0]):
-                raise DuplicateValueError(f"{account[0]} already exists in the table.")
+            if self.check_username_exits(account[0]):
+                raise DuplicateValueError(f"{account[0]} already in used.")
         for account in account_list:
-            logging.warning(f"Successful created: username: '{account[0]}' password: '{account[1]}' role: {account[2]} start_time: {account[3]} end_time: {account[4]}")
+
+            logging.warning(
+                f"Successful created: username: '{account[0]}' password: '{account[1]}' role: '{account[2]}' start_time: '{account[3]}' end_time: '{account[4]}'")
             cursor.execute("""
                 INSERT INTO account (username, password, role, start_time, end_time)
                 VALUES (?, ?, ?, ?, ?)
                 """, (account[0], get_hex_sha(account[1]), account[2], account[3], account[4]))
         self.conn.commit()
 
-    def check_account_exits(self, username: str) -> bool:
+    def check_username_exits(self, username: str) -> bool:
         """
         判断数据库内是否存在该用户
         """
@@ -94,6 +111,15 @@ class AccountSQL:
             return True
         else:
             return False
+
+    def username_get_base_info(self, username: str) -> Tuple[int, str, str, str]:
+        """
+        :param username: username
+        :return: Tuple[user_id, role, start_time, end_time]
+        """
+        cursor = self.conn.cursor()
+        item = cursor.execute("SELECT * FROM account WHERE username = ?;", [username]).fetchone()
+        return item[0], item[1], item[3], item[4]
 
     def verify_account(self, username: str, password: str) -> tuple:
         """
@@ -117,8 +143,29 @@ class AccountSQL:
             else:
                 raise AccountError(f"{username} not found")
 
+    def change_password(self, username: str, old_pwd: str, new_pwd: str) -> bool:
+        """
+        根据用户名和旧密码修改密码
+        """
+        try:
+            self.verify_account(username, old_pwd)
+        except AccountError or PasswordError:
+            return False
+        cursor = self.conn.cursor()
+        cursor.execute("UPDATE account SET password = ? WHERE username = ?;",
+                       (get_hex_sha(new_pwd), username))
+        self.conn.commit()
+        return True
+
+
+    def
+
 
 if __name__ == '__main__':
     log_set(logging.INFO, False)
     sql = AccountSQL("account.db")
+    # sql.create_accounts([("test_std", "password", "student", "2023-04-17 00:00:00", "2023-05-17 00:00:00")])
+    # sql.create_accounts([("test_teacher", "password", "teacher", "2023-04-17 00:00:00", "2023-05-17 00:00:00")])
+    # print(sql.username_get_base_info("admin"))
+    # print(sql.change_password("test_std", "new_password", "password"))
 
