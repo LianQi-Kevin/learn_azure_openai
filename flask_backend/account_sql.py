@@ -55,7 +55,8 @@ class AccountSQL:
     """
 
     def __init__(self, sql_name: str = "account.db"):
-        self.conn = sqlite3.connect(sql_name)
+        # todo: 暂时设置check_same_thread=false来规避sqlite3不允许多线程操作的错误，后期需要重构数据库函数封装逻辑来解决
+        self.conn = sqlite3.connect(sql_name, check_same_thread=False)
         self._create_table_if_not_exits()
         self._init_admin_if_not_exits()
 
@@ -92,7 +93,7 @@ class AccountSQL:
     def create_accounts(self, account_list: List[Tuple[str, str, str, str, str]]):
         """
         根据账户列表向数据库添加数据
-        :param account_list: list or tuple
+        :param account_list: List[Tuple(username, password, role, start_time, end_time)]
         """
         cursor = self.conn.cursor()
         # 遍历列表判断username重复项
@@ -120,14 +121,14 @@ class AccountSQL:
         else:
             return False
 
-    def username_get_base_info(self, username: str) -> Tuple[int, str, str, str]:
+    def user_id_get_base_info(self, user_id: int) -> Tuple[int, str, str, str]:
         """
-        :param username: username
-        :return: Tuple[user_id, role, start_time, end_time]
+        :param user_id: user_id
+        :return: Tuple[user_name, role, start_time, end_time]
         """
         cursor = self.conn.cursor()
-        item = cursor.execute("SELECT * FROM account WHERE username = ?;", [username]).fetchone()
-        return item[0], item[1], item[3], item[4]
+        item = cursor.execute("SELECT * FROM account WHERE user_id = ?;", [user_id]).fetchone()
+        return item[1], item[3], item[4], item[5]
 
     def verify_account(self, username: str, password: str) -> tuple:
         """
@@ -151,19 +152,15 @@ class AccountSQL:
             else:
                 raise AccountError(f"{username} not found")
 
-    def change_password(self, username: str, old_pwd: str, new_pwd: str) -> bool:
+    def change_password(self, username: str, new_pwd: str):
         """
-        根据用户名和旧密码修改密码
+        根据用户名修改密码
         """
-        try:
-            self.verify_account(username, old_pwd)
-        except AccountError or PasswordError:
-            return False
+
         cursor = self.conn.cursor()
         cursor.execute("UPDATE account SET password = ? WHERE username = ?;",
                        (get_hex_sha(new_pwd), username))
         self.conn.commit()
-        return True
 
     def update_allow_time(self, username: str, start_time: str, end_time: str):
         """
