@@ -54,11 +54,14 @@ class AccountSQL:
     请自行记录密钥和用户名对应值
     """
 
-    def __init__(self, sql_name: str = "account.db"):
+    def __init__(self, sql_name: str = "account.db", plaintext_pwd: bool = False, admin_username: str = "admin", admin_password: str = generate_key(15)):
+        # 是否明文存储密码
+        self.plaintext_password = plaintext_pwd
+
         # todo: 暂时设置check_same_thread=false来规避sqlite3不允许多线程操作的错误，后期需要重构数据库函数封装逻辑来解决
         self.conn = sqlite3.connect(sql_name, check_same_thread=False)
         self._create_table_if_not_exits()
-        self._init_admin_if_not_exits()
+        self._init_admin_if_not_exits(username=admin_username, password=admin_password)
 
     def _create_table_if_not_exits(self):
         """
@@ -75,19 +78,19 @@ class AccountSQL:
             )""")
         self.conn.commit()
 
-    def _init_admin_if_not_exits(self):
+    def _init_admin_if_not_exits(self, username: str, password: str):
         """
         如果不存在权限为admin的账户，则创建默认账户
         """
         cursor = self.conn.cursor()
         if cursor.execute("SELECT COUNT(role) FROM account WHERE role = 'admin';").fetchone()[0] == 0:
-            admin_pwd = generate_key(15)
             logging.warning(
-                f"未找到admin权限用户,使用默认值: username: 'admin', password: '{admin_pwd}' 请妥善保管该用户名-密钥对。数据库无法查看")
+                f"未找到admin权限用户,使用默认值: username: '{username}', password: '{password}' 请妥善保管该用户名-密钥对")
+            password = password if self.plaintext_password else get_hex_sha(password)
             cursor.execute("""
                 INSERT INTO account (username, password, role, start_time, end_time)
                 VALUES (?, ?, ?, ?, ?)
-                """, ('admin', get_hex_sha(admin_pwd), 'admin', '2023-01-01 00:00:00', '2030-01-01 00:00:00'))
+                """, (username, password, 'admin', '2023-01-01 00:00:00', '2030-01-01 00:00:00'))
             self.conn.commit()
 
     def create_accounts(self, account_list: List[Tuple[str, str, str, str, str]]):
@@ -108,7 +111,7 @@ class AccountSQL:
             cursor.execute("""
                 INSERT INTO account (username, password, role, start_time, end_time)
                 VALUES (?, ?, ?, ?, ?)
-                """, (account[0], get_hex_sha(account[1]), account[2], account[3], account[4]))
+                """, (account[0], account[1] if self.plaintext_password else get_hex_sha(account[1]), account[2], account[3], account[4]))
         self.conn.commit()
 
     def check_username_exits(self, username: str) -> bool:
@@ -159,7 +162,7 @@ class AccountSQL:
 
         cursor = self.conn.cursor()
         cursor.execute("UPDATE account SET password = ? WHERE username = ?;",
-                       (get_hex_sha(new_pwd), username))
+                       (new_pwd if self.plaintext_password else get_hex_sha(new_pwd), username))
         self.conn.commit()
 
     def update_allow_time(self, username: str, start_time: str, end_time: str):
@@ -180,7 +183,7 @@ class AccountSQL:
 
 if __name__ == '__main__':
     log_set(logging.INFO, False)
-    sql = AccountSQL("account.db")
+    sql = AccountSQL(sql_name="account.db")
     # sql.create_accounts([("test_std", "password", "student", "2023-04-17 00:00:00", "2023-05-17 00:00:00")])
     # sql.create_accounts([("test_teacher", "password", "teacher", "2023-04-17 00:00:00", "2023-05-17 00:00:00")])
     # print(sql.username_get_base_info("admin"))
