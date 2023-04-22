@@ -87,7 +87,7 @@ def user_login():
     password = request.json.get("password", None)
     try:
         info = sql_account.verify_account(username, password)
-    except AccountError or PasswordError:
+    except (AccountError, PasswordError):
         return api_return(code=404, status="error", message="Username or Password error")
 
     access_token = create_access_token(identity=str(info[0]))
@@ -121,7 +121,7 @@ def change_password():
     if role != "admin" and identity_username == username:
         try:
             sql_account.verify_account(username, old_password)
-        except AccountError or PasswordError:
+        except (AccountError, PasswordError):
             return api_return(code=403, status="error", message="Username or Password error")
     if sql_account.check_username_exits(username):
         sql_account.change_password(username, new_password)
