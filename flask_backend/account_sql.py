@@ -54,7 +54,8 @@ class AccountSQL:
     请自行记录密钥和用户名对应值
     """
 
-    def __init__(self, sql_name: str = "account.db", plaintext_pwd: bool = False, admin_username: str = "admin", admin_password: str = generate_key(15)):
+    def __init__(self, sql_name: str = "account.db", plaintext_pwd: bool = False, admin_username: str = "admin",
+                 admin_password: str = generate_key(15)):
         # 是否明文存储密码
         self.plaintext_password = plaintext_pwd
 
@@ -111,7 +112,8 @@ class AccountSQL:
             cursor.execute("""
                 INSERT INTO account (username, password, role, start_time, end_time)
                 VALUES (?, ?, ?, ?, ?)
-                """, (account[0], account[1] if self.plaintext_password else get_hex_sha(account[1]), account[2], account[3], account[4]))
+                """, (account[0], account[1] if self.plaintext_password else get_hex_sha(account[1]),
+                      account[2], account[3], account[4]))
         self.conn.commit()
 
     def check_username_exits(self, username: str) -> bool:
@@ -131,7 +133,10 @@ class AccountSQL:
         """
         cursor = self.conn.cursor()
         item = cursor.execute("SELECT * FROM account WHERE user_id = ?;", [user_id]).fetchone()
-        return item[1], item[3], item[4], item[5]
+        if item is not None:
+            return item[1], item[3], item[4], item[5]
+        else:
+            raise AccountError(f"{user_id} not exits")
 
     def verify_account(self, username: str, password: str) -> tuple:
         """
@@ -180,11 +185,15 @@ class AccountSQL:
         else:
             raise AccountError(f"{username} does not exits")
 
+    def delete_account(self, username: str):
+        if self.check_username_exits(username):
+            cursor = self.conn.cursor()
+            cursor.execute("DELETE FROM account WHERE username = ?", [username])
+            self.conn.commit()
+        else:
+            raise AccountError(f"{username} does not exits")
+
 
 if __name__ == '__main__':
     log_set(logging.INFO, False)
     sql = AccountSQL(sql_name="account.db")
-    # sql.create_accounts([("test_std", "password", "student", "2023-04-17 00:00:00", "2023-05-17 00:00:00")])
-    # sql.create_accounts([("test_teacher", "password", "teacher", "2023-04-17 00:00:00", "2023-05-17 00:00:00")])
-    # print(sql.username_get_base_info("admin"))
-    # print(sql.change_password("test_std", "new_password", "password"))
