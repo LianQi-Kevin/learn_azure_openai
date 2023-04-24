@@ -16,6 +16,7 @@ from uuid import uuid4
 
 from flask import Flask, request, jsonify
 from flask_jwt_extended import JWTManager, jwt_required, get_jwt_identity, create_refresh_token, create_access_token
+from flask_cors import CORS
 
 from account_sql import AccountSQL
 from utils.exceptions import PasswordError, AccountError, DuplicateValueError, TimeSetError
@@ -26,6 +27,9 @@ app = Flask(__name__)
 app.config["JWT_SECRET_KEY"] = str(uuid4())
 app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(minutes=10)
 app.config["JWT_REFRESH_TOKEN_EXPIRES"] = timedelta(days=15)
+
+# 跨域
+CORS(app)
 
 jwt = JWTManager(app)
 
