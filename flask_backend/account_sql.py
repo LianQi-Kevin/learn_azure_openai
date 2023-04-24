@@ -17,9 +17,12 @@ def verify_time(start_time: str, end_time: str) -> Tuple[bool, bool]:
     :param end_time: account allow end time
     :return: end_time > start_time, end_time > now_time > start_time
     """
-    start_time = datetime.strptime(start_time, "%Y-%m-%d %H:%M:%S")
-    end_time = datetime.strptime(end_time, "%Y-%m-%d %H:%M:%S")
-    return end_time > start_time, end_time > datetime.now() > start_time
+    try:
+        start_time = datetime.strptime(start_time, "%Y-%m-%d %H:%M:%S")
+        end_time = datetime.strptime(end_time, "%Y-%m-%d %H:%M:%S")
+        return end_time > start_time, end_time > datetime.now() > start_time
+    except ValueError:
+        raise TimeSetError("datatime.strptime error")
 
 
 def verify_password(password: str) -> bool:

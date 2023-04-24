@@ -44,6 +44,7 @@ def api_return(code: int, status: str, message: str = None, data: dict = None) -
         raise ValueError(f'{status} must in ["success", "error", "fail"]')
     if status != "success" and message is None:
         raise ValueError(f"status not 'success', must give reason")
+    logging.debug(f"code: {code}, status: {status}, message: {message}, data: {data}")
     return jsonify(code=code, status=status, message=message, data=data), code
 
 
@@ -144,18 +145,18 @@ def create_account():
     end_time = request.json.get("end_time", None)
     try:
         sql_account.create_accounts([(username, password, role, start_time, end_time)])
-        data = {
-            "username": username,
-            "password": password,
-            "role": role,
-            "start_time": start_time,
-            "end_time": end_time
-        }
-        return api_return(code=201, status="success", data=data)
     except DuplicateValueError:
         return api_return(code=409, status="error", message=f"username error, '{username}' already in used")
     except TimeSetError:
         return api_return(code=400, status="error", message=f"'{end_time}' early than '{start_time}'")
+    data = {
+        "username": username,
+        "password": password,
+        "role": role,
+        "start_time": start_time,
+        "end_time": end_time
+    }
+    return api_return(code=201, status="success")
 
 
 @app.route('/account', methods=['DELETE'])
@@ -210,5 +211,5 @@ def get_account_info():
 
 
 if __name__ == '__main__':
-    log_set(logging.INFO)
+    log_set(logging.DEBUG)
     app.run(debug=True, port=5000)
