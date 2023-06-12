@@ -3,3 +3,4 @@ tiktoken>=0.3.0
 flask
 Flask-JWT-Extended
 Flask-Cors
+urllib3==1.25.11
