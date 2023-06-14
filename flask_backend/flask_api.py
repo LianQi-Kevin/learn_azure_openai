@@ -214,6 +214,13 @@ def get_account_info():
     return api_return(code=200, status="success", data=data)
 
 
+@app.route('/chat/azure', methods=['POST'])
+# @jwt_required()
+def azure_chatGPT():
+    """请求azure API端点并获取数据"""
+    info_dict = {}
+
+
 if __name__ == '__main__':
     log_set(logging.DEBUG)
     app.run(debug=True, port=5000)
