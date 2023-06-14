@@ -1,4 +1,5 @@
-openai
+# openai
+requests
 tiktoken>=0.3.0
 flask
 Flask-JWT-Extended
