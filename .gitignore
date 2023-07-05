@@ -5,3 +5,4 @@ conversation
 node_modules
 /venv/
 *.db
+/flask_backend/logging.log

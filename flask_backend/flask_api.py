@@ -36,10 +36,10 @@ CORS(app)
 jwt = JWTManager(app)
 
 # sql link
-sql_account = AccountSQL(sql_name="account.db", admin_username="admin", admin_password="yxAlFXQ&EL6!sxQ")
+sql_account = AccountSQL(sql_name="./account.db")
 
 # chat configs
-CHAT_CONFIGS_PATH = "../keys"
+CHAT_CONFIGS_PATH = "./keys"
 assert os.path.exists(CHAT_CONFIGS_PATH), "ChatGPT config path not found"
 CHAT_CONFIGS = config_load(CHAT_CONFIGS_PATH)
 
@@ -301,5 +301,5 @@ def azure_chatGPT():
 
 
 if __name__ == '__main__':
-    log_set(logging.DEBUG)
+    log_set(logging.DEBUG, log_save=True)
     app.run(debug=True, port=5000)
