@@ -291,7 +291,7 @@ def azure_chatGPT():
             frequency_penalty=info_dict["frequency_penalty"]
         )
         if response.status_code != 200:
-            return api_return(code=response.status_code, status="error", message="Request error, please check log",
+            return api_return(code=response.status_code, status="error", message="Request error, please check response data",
                               data=response.json())
         else:
             return api_return(code=200, status="success", data={"token_usage": response.json()["usage"]["total_tokens"],
