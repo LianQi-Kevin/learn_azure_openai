@@ -21,7 +21,8 @@ from flask_cors import CORS
 
 from utils.account_sql import AccountSQL
 from utils.exceptions import PasswordError, AccountError, DuplicateValueError, TimeSetError
-from utils.chat_for_flask import TokenEncoding, get_response, token_del_conversation, config_load, verify_conversation, create_request_url
+from utils.chat_for_flask import TokenEncoding, get_response, token_del_conversation, config_load, verify_conversation, \
+    create_request_url
 from utils.logging_utils import log_set
 
 # init flask & JWT
@@ -42,6 +43,9 @@ sql_account = AccountSQL(sql_name="./account.db")
 CHAT_CONFIGS_PATH = "./keys"
 assert os.path.exists(CHAT_CONFIGS_PATH), "ChatGPT config path not found"
 CHAT_CONFIGS = config_load(CHAT_CONFIGS_PATH)
+
+# logging
+log_set(logging.DEBUG, log_save=True)
 
 
 def api_return(code: int, status: str, message: str = None, data: dict = None) -> Tuple[jsonify, int]:
@@ -291,7 +295,8 @@ def azure_chatGPT():
             frequency_penalty=info_dict["frequency_penalty"]
         )
         if response.status_code != 200:
-            return api_return(code=response.status_code, status="error", message="Request error, please check response data",
+            return api_return(code=response.status_code, status="error",
+                              message="Request error, please check response data",
                               data=response.json())
         else:
             return api_return(code=200, status="success", data={"token_usage": response.json()["usage"]["total_tokens"],
@@ -301,5 +306,4 @@ def azure_chatGPT():
 
 
 if __name__ == '__main__':
-    log_set(logging.DEBUG, log_save=True)
     app.run(debug=True, port=5000)
